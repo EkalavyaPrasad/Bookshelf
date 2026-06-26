@@ -164,8 +164,9 @@ async def upload_book(file: UploadFile = File(...)):
 
     dest = BOOKS_DIR / file.filename
     if dest.exists():
-        raise HTTPException(status_code=409, detail="A book with that filename already exists")
         return FileResponse("static/homepage.html")
+        raise HTTPException(status_code=409, detail="A book with that filename already exists")
+       
 
     with dest.open("wb") as f:
         shutil.copyfileobj(file.file, f)

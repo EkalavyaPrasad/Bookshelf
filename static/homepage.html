@@ -226,6 +226,36 @@ async function removeBook() {
     alert(`Error: ${data.detail}`);
   }
 }
+  
+async function uploadBook(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+        
+        if (response.status === 409) {
+            // File already exists - redirect to homepage
+            alert("A book with that filename already exists");
+            window.location.href = "/";
+            return;
+        }
+        
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
+        
+        // Success - redirect to homepage
+        window.location.href = "/";
+    } catch (error) {
+        console.error("Upload error:", error);
+        alert("Upload failed: " + error.message);
+        window.location.href = "/";
+    }
+}  
 
 async function loadBooks() {
     const response = await fetch('/api/books');

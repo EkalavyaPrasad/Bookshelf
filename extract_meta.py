@@ -158,10 +158,10 @@ def run(file_path="Books", targets: list[Path] | None = None):
 
     
 if __name__ == "__main__":
-            run()
-
-DB_PATH = Path("bookshelf.db")
-new_con = sqlite3.connect(DB_PATH)
-new_cur = new_con.cursor()
-for row in new_cur.execute("SELECT page_count, author, title FROM Books ORDER BY page_count"):
-    print(row)
+    run()
+    
+    DB_PATH = Path("bookshelf.db")
+    new_con = sqlite3.connect(DB_PATH)
+    new_cur = new_con.cursor()
+    for row in new_cur.execute("SELECT page_count, author, title FROM Books ORDER BY page_count"):
+        print(row)

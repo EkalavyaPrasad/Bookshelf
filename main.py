@@ -30,7 +30,7 @@ def ensure_directories():
 
 
 ensure_directories()
-ensure_progress_table()
+
 
 # Serve your static files (HTML, PDF.js)
 app.mount("/static", StaticFiles(directory="static"), name="static")

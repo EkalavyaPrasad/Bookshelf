@@ -201,6 +201,49 @@
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(currentPage + 1);
       if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(currentPage - 1);
+
+
+        let lastTouchTime = 0;
+    const TOUCH_DEBOUNCE_MS = 700; // ignore clicks within this ms after a touch
+
+    function isInteractiveElement(node) {
+      if (!node) return false;
+      return !!node.closest && (node.closest('#toolbar') || node.closest('input') || node.closest('button') || node.closest('a') || node.closest('select'));
+    }
+
+    function handlePointerNavigation(clientX, rect) {
+      const relX = clientX - rect.left;
+      const pct = relX / rect.width;
+      // left 30%
+      if (pct < 0.30) {
+        goTo(currentPage - 1);
+      } else if (pct > 0.70) {
+        goTo(currentPage + 1);
+      }
+    }
+
+    function onViewerTouchStart(e) {
+      // ignore if interactive element was touched
+      if (isInteractiveElement(e.target)) return;
+      lastTouchTime = Date.now();
+      const touch = e.touches && e.touches[0];
+      if (!touch) return;
+      const rect = viewerContainer.getBoundingClientRect();
+      handlePointerNavigation(touch.clientX, rect);
+    }
+
+    function onViewerClick(e) {
+      // If a touch happened recently, ignore the synthetic click
+      if (Date.now() - lastTouchTime < TOUCH_DEBOUNCE_MS) return;
+      if (isInteractiveElement(e.target)) return;
+      const rect = viewerContainer.getBoundingClientRect();
+      const clientX = e.clientX;
+      handlePointerNavigation(clientX, rect);
+    }
+
+    // Attach listeners to the viewer container so toolbar clicks are excluded
+    viewerContainer.addEventListener('touchstart', onViewerTouchStart, { passive: true });
+    viewerContainer.addEventListener('click', onViewerClick);
       
       
     });

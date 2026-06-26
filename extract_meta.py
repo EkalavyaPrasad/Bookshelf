@@ -76,6 +76,11 @@ def ingest_file(pdf_path: Path, cur: sqlite3.Cursor) -> bool:
     if cur.fetchone():
         print(f"  [skip] Already in database: {filename}")
         return False
+
+   # Skip if not a PDF
+   if not str(filename).lower().endswith(".pdf"):
+        print(f"  [skip] Not a PDF: {filename}")
+        return False
  
     print(f"  [ingest] {filename}")
  

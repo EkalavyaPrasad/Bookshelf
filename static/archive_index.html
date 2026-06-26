@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookshelf Reader</title>
+  <link rel="stylesheet" href="/static/pdfjs/pdf_viewer.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #404040; display: flex; flex-direction: column; align-items: center; }
+
+    #toolbar {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: #323232;
+      color: white;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    #page-info { font-family: sans-serif; font-size: 14px; }
+
+    #viewer-container {
+      width: 100%;
+      max-width: 900px;
+      padding: 16px;
+    }
+
+    .page { margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    canvas { display: block; width: 100% !important; height: auto !important; }
+  </style>
+</head>
+<body>
+
+  <div id="toolbar">
+    <span id="page-info">Loading...</span>
+  </div>
+
+  <div id="viewer-container"></div>
+
+  <script type="module">
+    import * as pdfjsLib from '/static/pdfjs/pdf.js';
+
+    // Point the worker at our local copy
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdfjs/pdf.worker.js';
+
+    // Read the ?file= param from the URL
+    const params = new URLSearchParams(window.location.search);
+    const filename = params.get('file');
+
+    if (!filename) {
+      document.getElementById('page-info').textContent = 'No file specified.';
+    } else {
+      loadPDF(`/books/${filename}`);
+    }
+
+    async function loadPDF(url) {
+      const loadingTask = pdfjsLib.getDocument({url: url});
+      const pdf = await loadingTask.promise;
+
+      const totalPages = pdf.numPages;
+      const container = document.getElementById('viewer-container');
+      const pageInfo = document.getElementById('page-info');
+
+      pageInfo.textContent = `${totalPages} pages`;
+
+      // Render all pages sequentially
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'page';
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        container.appendChild(canvas);
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      }
+
+      pageInfo.textContent = `${totalPages} pages — done`;
+    }
+  </script>
+
+</body>
+</html>

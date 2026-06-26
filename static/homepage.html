@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library</title>
+
+<style>
+
+button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+
+  border: none;
+  display: flex;
+  padding: 0.75rem 1.5rem;
+  background-color: #488aec;
+  color: #ffffff;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  text-transform: uppercase;
+  vertical-align: middle;
+  align-items: center;
+  border-radius: 0.5rem;
+  user-select: none;
+  gap: 0.75rem;
+  box-shadow:
+    0 4px 6px -1px #488aec31,
+    0 2px 4px -1px #488aec17;
+  transition: all 0.6s ease;
+}
+
+button:hover {
+  box-shadow:
+    0 10px 15px -3px #488aec4f,
+    0 4px 6px -2px #488aec17;
+}
+
+button:focus,
+button:active {
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        margin: 0;
+        padding: 2rem;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+    }
+
+    .card-title {
+        font-weight: bold;
+        margin-bottom: 1rem;
+        word-break: break-word;
+    }
+
+    .open-btn {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+    }
+
+    .open-btn:hover {
+        background: #1d4ed8;
+    }
+
+.card-basic{
+width:320px;
+background:#fff;
+border-radius:16px;
+overflow:hidden;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+transition:.3s;
+}
+
+.card-basic:hover{
+transform:translateY(-8px);
+box-shadow:0 18px 40px rgba(0,0,0,.15);
+}
+
+.card-basic__image{
+height:180px;
+overflow:hidden;
+}
+
+.card-basic__image img{
+width:100%;
+height:100%;
+object-fit:cover;
+display:block;
+}
+
+.card-basic__content{
+padding:24px;
+}
+
+.card-basic__btn{
+display:inline-block;
+padding:10px 18px;
+border-radius:30px;
+background:linear-gradient(135deg,#7a5cff,#00c2ff);
+color:#fff;
+text-decoration:none;
+}
+
+
+
+
+</style>
+</head>
+<body>
+
+<h1>My Library</h1>
+
+<form action="/upload" method="post" enctype="multipart/form-data">
+
+    <input type="file" name="file" accept=".pdf">
+
+ <button>
+  <svg
+    aria-hidden="true"
+    stroke="currentColor"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      stroke-width="2"
+      stroke="#fffffff"
+      d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H11M13.5 3L19 8.625M13.5 3V7.625C13.5 8.17728 13.9477 8.625 14.5 8.625H19M19 8.625V11.8125"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    ></path>
+    <path
+      stroke-linejoin="round"
+      stroke-linecap="round"
+      stroke-width="2"
+      stroke="#fffffff"
+      d="M17 15V18M17 21V18M17 18H14M17 18H20"
+    ></path>
+  </svg>
+  ADD FILE
+</button>
+
+</form>
+
+
+</form>
+
+
+
+<div style="position:fixed; top:1rem; right:1rem; display:flex; gap:0.5rem; align-items:center; z-index:100;">
+  <select id="remove-select" style="padding:0.4rem 0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.85rem;">
+    <option value="">Select book to remove…</option>
+  </select>
+  <button id="remove-btn" onclick="removeBook()" style="position:static; padding:0.4rem 0.8rem; font-size:0.8rem;">Remove</button>
+</div>
+
+
+<div id="book-grid" class="grid"></div>
+
+<script>
+
+async function populateRemoveDropdown(books) {
+  const select = document.getElementById('remove-select');
+  select.innerHTML = '<option value="">Select book to remove…</option>';
+  books.forEach(book => {
+    const opt = document.createElement('option');
+    opt.value = book.filename;
+    opt.textContent = book.title || book.filename;
+    select.appendChild(opt);
+  });
+}
+
+
+async function removeBook() {
+  const select = document.getElementById('remove-select');
+  const filename = select.value;
+  if (!filename) return;
+
+  if (!confirm(`Remove "${select.options[select.selectedIndex].text}"?`)) return;
+
+  const res = await fetch(`/api/books/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  if (res.ok) {
+    document.getElementById('book-grid').innerHTML = '';
+    loadBooks();
+  } else {
+    const data = await res.json();
+    alert(`Error: ${data.detail}`);
+  }
+}
+
+async function loadBooks() {
+    const response = await fetch('/api/books');
+    const books = await response.json();
+
+    const grid = document.getElementById('book-grid');
+
+    books.forEach(book => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+               <div class="card-basic">
+
+               <div class="card-basic__image">
+               <a href="/read?file=${encodeURIComponent(book.filename)}">
+               <img src="${book.cover}" alt="${book.cover}">
+               </a>
+</div>
+
+               <div class="card-basic__content">
+               <h3> ${book.title}</h3>
+    <p>${book.author}</p>
+    
+  </div>
+
+</div>`;
+
+        grid.appendChild(card);
+        populateRemoveDropdown(books);});
+}
+
+loadBooks();
+
+</script>
+
+</body>
+</html>

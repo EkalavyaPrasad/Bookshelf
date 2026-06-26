@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookshelf Reader</title>
+  <link rel="stylesheet" href="/static/pdfjs/pdf_viewer.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { background: #404040; display: flex; flex-direction: column; align-items: center; }
+
+    #toolbar {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: #323232;
+      color: white;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    #toolbar button {
+      background: #555;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #toolbar button:hover:not(:disabled) { background: #777; }
+    #toolbar button:disabled { opacity: 0.35; cursor: default; }
+
+    #page-info { font-family: sans-serif; font-size: 14px; min-width: 100px; text-align: center; }
+
+    #page-input {
+      width: 48px;
+      text-align: center;
+      background: #555;
+      color: white;
+      border: 1px solid #777;
+      border-radius: 4px;
+      font-size: 14px;
+      padding: 4px;
+    }
+
+    #viewer-container {
+      width: 100%;
+      max-width: 900px;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      width: 100% !important;
+      height: auto !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="btn-prev" disabled>← Prev</button>
+    <input id="page-input" type="number" min="1" value="1" />
+    <span id="page-info">/ —</span>
+    <button id="btn-next" disabled>Next →</button>
+  </div>
+
+  <div id="viewer-container">
+    <canvas id="pdf-canvas"></canvas>
+  </div>
+
+  <script type="module">
+    import * as pdfjsLib from '/static/pdfjs/pdf.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdfjs/pdf.worker.js';
+
+    const params   = new URLSearchParams(window.location.search);
+    const filename = params.get('file');
+    const bookId   = params.get('id');   // integer book ID from the DB
+
+    const canvas    = document.getElementById('pdf-canvas');
+    const ctx       = canvas.getContext('2d');
+    const pageInfo  = document.getElementById('page-info');
+    const pageInput = document.getElementById('page-input');
+    const btnPrev   = document.getElementById('btn-prev');
+    const btnNext   = document.getElementById('btn-next');
+    let pdfDoc      = null;
+    let currentPage = 1;
+    let renderTask  = null;
+    
+
+// ── Progress helpers ────────────────────────────────────────────────────
+ 
+    async function fetchProgress() {
+      if (!filename) return 1;
+      try {
+        const res = await fetch(`/api/progress/${encodeURIComponent(filename)}`);
+        if (!res.ok) return 1;
+        const { page } = await res.json();
+        return page ?? 1;
+      } catch {
+        return 1;
+      }
+    }
+ 
+    let saveTimer = null;
+    function saveProgress(page) {
+      if (!filename) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        fetch(`/api/progress/${encodeURIComponent(filename)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page }),
+        }).catch(() => {});
+      }, 800);
+    }
+
+
+
+
+    // ── PDF loading ─────────────────────────────────────────────────────────
+
+    if (!filename) {
+      pageInfo.textContent = 'No file specified.';
+    } else {
+      loadPDF(`/books/${filename}`);
+    }
+
+    async function loadPDF(url) {
+      pageInfo.textContent = '/ loading…';
+      const pdf = await pdfjsLib.getDocument({ url }).promise;
+      pdfDoc = pdf;
+      pageInput.max = pdf.numPages;
+
+      // Restore saved position before rendering
+      const savedPage = await fetchProgress();
+      currentPage = Math.min(savedPage, pdf.numPages);
+
+      updateControls();
+      await renderPage(currentPage);
+    }
+
+    async function renderPage(pageNum) {
+      if (renderTask) {
+        renderTask.cancel();
+        renderTask = null;
+      }
+
+      const page     = await pdfDoc.getPage(pageNum);
+      const scale    = canvas.parentElement.clientWidth / page.getViewport({ scale: 1 }).width;
+      const viewport = page.getViewport({ scale: Math.min(scale, 2) });
+
+      canvas.width  = viewport.width;
+      canvas.height = viewport.height;
+
+      renderTask = page.render({ canvasContext: ctx, viewport });
+
+      try {
+        await renderTask.promise;
+      } catch (e) {
+        if (e?.name !== 'RenderingCancelledException') throw e;
+      } finally {
+        renderTask = null;
+      }
+
+      updateControls();
+    }
+
+    function updateControls() {
+      const total = pdfDoc?.numPages ?? 0;
+      pageInfo.textContent = `/ ${total}`;
+      pageInput.value      = currentPage;
+      btnPrev.disabled     = currentPage <= 1;
+      btnNext.disabled     = currentPage >= total;
+    }
+
+    async function goTo(pageNum) {
+      if (!pdfDoc) return;
+      const clamped = Math.max(1, Math.min(pageNum, pdfDoc.numPages));
+      if (clamped === currentPage) return;
+      currentPage = clamped;
+      await renderPage(currentPage);
+      saveProgress(currentPage);   // persist after every navigation
+    }
+
+    // ── Controls ────────────────────────────────────────────────────────────
+
+    btnPrev.addEventListener('click', () => goTo(currentPage - 1));
+    btnNext.addEventListener('click', () => goTo(currentPage + 1));
+    pageInput.addEventListener('change', () => goTo(parseInt(pageInput.value, 10)));
+
+    document.addEventListener('keydown', e => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(currentPage + 1);
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(currentPage - 1);
+      
+      
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+bookshelf.db
+Books/*
+!Books/.gitkeep
+Covers/*
+!Covers/.gitkeep
+.env

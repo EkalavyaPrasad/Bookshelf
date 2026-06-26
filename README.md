@@ -1,7 +1,4 @@
 # Bookshelf
-
-# Bookshelf
-
 A lightweight, self-hosted PDF library server. Drop PDFs onto your machine, browse your collection from any device on your local network, and read them in the browser — no downloading, no syncing apps required.
 
 Built as a personal alternative to services like Readarr, following the same self-hosting philosophy as the *arr stack. This project does **not** connect to trackers or handle automated downloading — PDFs are added manually by you.
@@ -9,7 +6,6 @@ Built as a personal alternative to services like Readarr, following the same sel
 ---
 
 ## Features
-
 - Browse your PDF collection as a visual grid with cover images and metadata
 - Read PDFs on any device via browser, no download needed
 - Tracks reading progress per book across sessions
@@ -19,7 +15,6 @@ Built as a personal alternative to services like Readarr, following the same sel
 ---
 
 ## Tech Stack
-
 | Layer | Tool |
 |---|---|
 | Backend | FastAPI (Python) |
@@ -30,7 +25,66 @@ Built as a personal alternative to services like Readarr, following the same sel
 
 ---
 
-## Prerequisites
+## Running with Docker (Recommended)
+
+Docker is the easiest way to get started — no Python, no pip, no system dependencies to install manually. Docker handles everything.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) or [Docker Engine](https://docs.docker.com/engine/install/) (Linux/Ubuntu)
+
+### Setup
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/EkalavyaPrasad/Bookshelf.git
+cd Bookshelf
+
+# 2. Build and start the container
+docker compose up --build -d
+```
+
+Then open a browser and visit:
+```
+http://localhost:8083
+```
+
+Or from another device on your network:
+```
+http://<your-server-ip>:8083
+```
+
+To find your server's IP:
+```bash
+hostname -I
+```
+
+### Adding Books
+
+Drop PDF files into the `Books/` folder. On the next page load they will appear in the library automatically.
+
+```bash
+cp mybook.pdf ~/Bookshelf/Books/
+```
+
+### Stopping the server
+
+```bash
+docker compose down
+```
+
+### Updating after a code change
+
+```bash
+docker compose up --build -d
+```
+
+Your books, covers, and reading progress are stored in mounted volumes (`Books/`, `Covers/`, `data/`) and are never affected by rebuilds.
+
+---
+
+## Running Manually (Without Docker)
+
+### Prerequisites
 
 **Python dependencies** (via pip):
 ```
@@ -48,9 +102,7 @@ sudo apt install poppler-utils
 
 > `pdf2image` is a Python wrapper around Poppler. Without this system package installed, cover generation will fail with a cryptic error.
 
----
-
-## Setup
+### Setup
 
 ```bash
 # 1. Clone the repo
@@ -68,9 +120,7 @@ pip install -r requirements.txt
 sudo apt install poppler-utils
 ```
 
----
-
-## Running the Server
+### Running the Server
 
 ```bash
 source venv/bin/activate
@@ -82,14 +132,7 @@ Then open a browser and visit:
 http://<your-server-ip>:8000
 ```
 
-To find your server's IP:
-```bash
-hostname -I
-```
-
----
-
-## Adding Books
+### Adding Books
 
 Drop PDF files into the `Books/` folder. On the next page load, the server will automatically scan for new files, extract their metadata, generate cover images, and add them to the library.
 
@@ -103,11 +146,14 @@ cp mybook.pdf ~/Bookshelf/Books/
 
 ```
 Bookshelf/
+├── Dockerfile
+├── docker-compose.yml
 ├── main.py               ← FastAPI app, API routes
 ├── extract_meta.py       ← PDF ingestion, metadata extraction, cover generation
 ├── requirements.txt
 ├── Books/                ← Drop your PDFs here (gitignored)
 ├── Covers/               ← Auto-generated cover thumbnails (gitignored)
+├── data/                 ← SQLite database (gitignored, Docker only)
 └── static/
     ├── homepage.html     ← Library grid view
     ├── index.html        ← PDF reader view
@@ -120,7 +166,6 @@ Bookshelf/
 ---
 
 ## Notes
-
 - **Single user only** — no authentication is implemented. Intended for use on a trusted local network.
 - The SQLite database (`bookshelf.db`) is created automatically on first run.
 - The `Books/` and `Covers/` directories are created automatically if they don't exist.

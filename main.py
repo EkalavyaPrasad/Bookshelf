@@ -14,8 +14,10 @@ from extract_meta import run
 
 app = FastAPI()
 BOOKS_DIR = Path("Books")
-DB_PATH = Path("bookshelf.db")
 COVERS_DIR = Path("Covers")
+
+import os
+DB_PATH = Path(os.getenv("DB_PATH", "bookshelf.db"))
 
 # Serve your static files (HTML, PDF.js)
 app.mount("/static", StaticFiles(directory="static"), name="static")

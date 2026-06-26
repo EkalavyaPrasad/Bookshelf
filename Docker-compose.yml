@@ -1,0 +1,13 @@
+services:
+  bookshelf:
+    build: .
+    container_name: bookshelf
+    restart: unless-stopped
+    ports:
+      - "8083:8000"       # host:container — matches your planned port
+    volumes:
+      - ./Books:/app/Books         # drop PDFs here on the host
+      - ./Covers:/app/Covers       # generated cover thumbnails
+      - ./data:/app/data           # SQLite database lives here
+    environment:
+      - DB_PATH=/app/data/bookshelf.db

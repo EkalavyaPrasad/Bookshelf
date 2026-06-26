@@ -17,7 +17,20 @@ BOOKS_DIR = Path("Books")
 COVERS_DIR = Path("Covers")
 
 import os
-DB_PATH = Path(os.getenv("DB_PATH", "bookshelf.db"))
+
+BOOKS_DIR = Path("Books")
+DB_PATH = Path(os.getenv("DB_PATH", "bookshelf.db"))  
+COVERS_DIR = Path("Covers")
+
+
+def ensure_directories():
+    BOOKS_DIR.mkdir(exist_ok=True)
+    COVERS_DIR.mkdir(exist_ok=True)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # creates data/ if using Docker
+
+
+ensure_directories()
+ensure_progress_table()
 
 # Serve your static files (HTML, PDF.js)
 app.mount("/static", StaticFiles(directory="static"), name="static")

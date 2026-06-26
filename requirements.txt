@@ -3,4 +3,4 @@ uvicorn[standard]
 pypdf
 pdf2image
 pydantic
- 
+python-multipart

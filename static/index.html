@@ -91,6 +91,7 @@
     const pageInput = document.getElementById('page-input');
     const btnPrev   = document.getElementById('btn-prev');
     const btnNext   = document.getElementById('btn-next');
+    const viewerContainer = document.getElementById('viewer-container');
     let pdfDoc      = null;
     let currentPage = 1;
     let renderTask  = null;
@@ -191,7 +192,7 @@
       saveProgress(currentPage);   // persist after every navigation
     }
 
-    // ── Controls ────────────────────────────────────────────────────────────
+    // ── Controls ───────────────────────────────────────────────────────────
 
     btnPrev.addEventListener('click', () => goTo(currentPage - 1));
     btnNext.addEventListener('click', () => goTo(currentPage + 1));
@@ -201,9 +202,10 @@
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(currentPage + 1);
       if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(currentPage - 1);
+    });
 
-
-        let lastTouchTime = 0;
+    // ── Touch & Click navigation ────────────────────────────────────────────
+    let lastTouchTime = 0;
     const TOUCH_DEBOUNCE_MS = 700; // ignore clicks within this ms after a touch
 
     function isInteractiveElement(node) {
@@ -244,9 +246,6 @@
     // Attach listeners to the viewer container so toolbar clicks are excluded
     viewerContainer.addEventListener('touchstart', onViewerTouchStart, { passive: true });
     viewerContainer.addEventListener('click', onViewerClick);
-      
-      
-    });
   </script>
 </body>
 </html>

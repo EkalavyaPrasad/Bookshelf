@@ -160,10 +160,12 @@ def save_progress(filename, body: ProgressUpdate):
 async def upload_book(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+        return FileResponse("static/homepage.html")
 
     dest = BOOKS_DIR / file.filename
     if dest.exists():
         raise HTTPException(status_code=409, detail="A book with that filename already exists")
+        return FileResponse("static/homepage.html")
 
     with dest.open("wb") as f:
         shutil.copyfileobj(file.file, f)

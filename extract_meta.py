@@ -110,7 +110,7 @@ def ingest_file(pdf_path: Path, cur: sqlite3.Cursor) -> bool:
 def run(file_path="Books", targets: list[Path] | None = None):
     BOOKS_DIR = os.listdir(file_path)
 
-    DB_PATH = Path("bookshelf.db") 
+    DB_PATH = Path(os.getenv("DB_PATH", "bookshelf.db"))   
     con = sqlite3.connect(DB_PATH)
 
     cur = con.cursor()

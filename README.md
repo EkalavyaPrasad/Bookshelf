@@ -1,7 +1,5 @@
 # Bookshelf
-A lightweight, self-hosted PDF library server. Drop PDFs onto your machine, browse your collection from any device on your local network, and read them in the browser — no downloading, no syncing apps required.
-
-Built as a personal alternative to services like Readarr, following the same self-hosting philosophy as the *arr stack. This project does **not** connect to trackers or handle automated downloading — PDFs are added manually by you.
+A lightweight, self-hosted PDF library server. Drop PDFs onto your machine, browse your collection from any device on your local network, and read them in the browser, no downloading, no syncing apps required.
 
 ---
 
